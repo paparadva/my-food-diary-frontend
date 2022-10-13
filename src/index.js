@@ -165,8 +165,12 @@ function saveProductRowsToLocalStorage(productRows) {
 
 
 function MyFoodDiary() {
-  const [productRows, setProductRows] = useState(readProductRowsFromLocalStorage());
+  const [productRows, setProductRows] = useState([]);
   const [summary, setSummary] = useState(new SummaryData());
+
+  useEffect(() => {
+    setProductRows(readProductRowsFromLocalStorage());
+  }, []);
 
   useEffect(() => {
     saveProductRowsToLocalStorage(productRows);
