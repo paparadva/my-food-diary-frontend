@@ -141,11 +141,28 @@ function TableRow(props) {
 }
 
 
+function readProductRowsFromLocalStorage() {
+  const productRowsJson = localStorage.getItem("productRows");
+  if (!productRowsJson) {
+    return [];
+  } else {
+    const objList = JSON.parse(productRowsJson);
+    return objList.map(obj => Object.assign(new ProductData(), obj));
+  }
+}
+
+
+function saveProductRowsToLocalStorage(productRows) {
+  localStorage.setItem("productRows", JSON.stringify(productRows));
+}
+
+
 function MyFoodDiary() {
-  const [productRows, setProductRows] = useState([]);
+  const [productRows, setProductRows] = useState(readProductRowsFromLocalStorage());
   const [summary, setSummary] = useState(new SummaryData());
 
   useEffect(() => {
+    saveProductRowsToLocalStorage(productRows);
     let summary = new SummaryData();
 
     productRows.forEach(product => {
