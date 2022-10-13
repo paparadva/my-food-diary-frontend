@@ -35,6 +35,9 @@ class ProductData {
   }
 }
 
+ProductData.nextId = 1;
+
+
 class SummaryData {
   constructor(kcal, protein, fat, carb) {
     this.kcal = kcal ?? 0;
@@ -106,7 +109,7 @@ function TablePanel(props) {
       <div></div>
 
       {productRows.map((product, index) => <TableRow 
-        key={index} 
+        key={product.id} 
         product={product} 
         onAmountChange={handleAmountChange} 
         onRemoveClick={handleRemoveRow} 
@@ -147,7 +150,11 @@ function readProductRowsFromLocalStorage() {
     return [];
   } else {
     const objList = JSON.parse(productRowsJson);
-    return objList.map(obj => Object.assign(new ProductData(), obj));
+    return objList.map(obj => {
+      let product = Object.assign(new ProductData(), obj);
+      product.id = ProductData.nextId++;
+      return product;
+    });
   }
 }
 
@@ -184,13 +191,17 @@ function MyFoodDiary() {
   const addSuggestedProduct = productName => {
     const rowIndex = productRows.length;
     const rows = productRows.slice();
-    rows.push(new ProductData(productName));
-    setProductRows(rows);
+
+    let product = new ProductData(productName);
+    product.id = ProductData.nextId++;
+    const productId = product.id;
+    rows.push(product);
 
     fetch(GET_PRODUCT_URL + encodeURIComponent(productName))
       .then(response => {return response.json()})
-      .then(product => {
-        const row = new ProductData(product.name, 0, product.kcal, product.protein, product.fat, product.carb);
+      .then(productResp => {
+        const row = new ProductData(productResp.name, 0, productResp.kcal, productResp.protein, productResp.fat, productResp.carb);
+        row.id = productId;
         changeProductAtIndex(row, rowIndex);
       });
   };
@@ -202,8 +213,9 @@ function MyFoodDiary() {
   };
 
   const updateProductAmount = (rowIndex, newAmount) => {
-    let product = productRows[rowIndex];
-    product = new ProductData(product.name, newAmount, product.kcal, product.protein, product.fat, product.carb);
+    const oldProduct = productRows[rowIndex];
+    let product = new ProductData(oldProduct.name, newAmount, oldProduct.kcal, oldProduct.protein, oldProduct.fat, oldProduct.carb);
+    product.id = oldProduct.id;
     changeProductAtIndex(product, rowIndex);
   };
 
