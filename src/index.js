@@ -70,13 +70,18 @@ function SearchPanel(props) {
   return (
   <div className="search-container">
     <input type="search" id="search-input" onChange={handleSearchInput}/>
+    
     <div className="search-results">
+
     {suggestions.map(productName => 
-      <div className="search-result-row" key={productName}>
-        <p className="result-product-name">{productName}</p>
-        <button className="add-product-button" onClick={() => handleAddProductClick(productName)}>+</button>
+      <div className="table-row" key={productName}>
+        <div className="table-cell product-name">{productName}</div>
+        <div className="table-cell">
+          <button onClick={() => handleAddProductClick(productName)} className="row-action-button add-button">+</button>
+        </div>
       </div>
     )}
+
     </div>
   </div>
   );
@@ -128,19 +133,21 @@ function TableRow(props) {
   const onRemoveClick = props.onRemoveClick;
   const rowIndex = props.rowIndex;
 
-  return (<>
-    <div className="table-cell product-name">{product.name}</div>
-    <div className="table-cell product-mass">
-      <input type="number" defaultValue={product.amount} onChange={(e) => onAmountChange(rowIndex, e.target.value)} onFocus={(e) => e.target.select()} min="0" className="mass-input"/>
+  return (
+    <div className="table-row">
+      <div className="table-cell product-name">{product.name}</div>
+      <div className="table-cell product-mass">
+        <input type="number" defaultValue={product.amount} onChange={(e) => onAmountChange(rowIndex, e.target.value)} onFocus={(e) => e.target.select()} min="0" className="mass-input"/>
+      </div>
+      <div className="table-cell product-kcal">{Math.round(product.calcKcal())}</div>
+      <div className="table-cell product-protein">{product.calcProtein().toFixed(1)}</div>
+      <div className="table-cell product-fat">{product.calcFat().toFixed(1)}</div>
+      <div className="table-cell product-carb">{product.calcCarb().toFixed(1)}</div>
+      <div className="table-cell product-remove">
+        <button className="row-action-button remove-button" onClick={() => onRemoveClick(rowIndex)}>X</button>
+      </div>
     </div>
-    <div className="table-cell product-kcal">{Math.round(product.calcKcal())}</div>
-    <div className="table-cell product-protein">{product.calcProtein().toFixed(1)}</div>
-    <div className="table-cell product-fat">{product.calcFat().toFixed(1)}</div>
-    <div className="table-cell product-carb">{product.calcCarb().toFixed(1)}</div>
-    <div className="table-cell product-remove">
-      <button className="remove-product-button" onClick={() => onRemoveClick(rowIndex)}>X</button>
-    </div>
-  </>);
+  );
 }
 
 
