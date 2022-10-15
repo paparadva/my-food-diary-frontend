@@ -47,6 +47,32 @@ class SummaryData {
   }
 }
 
+function throttleDecorator(func) {
+  const delayMs = 300;
+
+  let lastArgs;
+  let throttling = false;
+
+  return function() {
+    lastArgs = arguments;
+
+    if (!throttling) {
+      throttling = true;
+
+      setTimeout(() => {
+        throttling = false;
+        func.call(this, ...lastArgs);
+      }, delayMs);
+    }
+  };
+}
+
+const getProductSuggestions = throttleDecorator((query, setResultFunc) => {
+  fetch(SEARCH_PRODUCTS_URL + encodeURIComponent(query))
+    .then(response => response.json())
+    .then(names => setResultFunc(names));
+});
+
 
 function SearchPanel(props) {
   const [suggestions, setSuggestions] = useState([]);
@@ -56,15 +82,8 @@ function SearchPanel(props) {
   const handleSearchInput = event => {
     let query = event.target.value;
     if (!query.trim()) { setSuggestions([]); return; }
-    
 
-    fetch(SEARCH_PRODUCTS_URL + encodeURIComponent(query))
-      .then(response => {
-        return response.json();
-      })
-      .then(names => {
-        setSuggestions(names);
-      });
+    getProductSuggestions(query, (names) => setSuggestions(names));
   };
 
   return (
