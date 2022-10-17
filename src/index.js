@@ -111,10 +111,14 @@ function TablePanel(props) {
   const productRows = props.productRows;
   const handleRemoveRow = props.onRemoveRow;
   const handleAmountChange = props.onAmountChange;
+  const handleClearTable = props.onClearTable;
   const summary = props.summary;
 
   return (
   <div className="table-container">
+    <div className="table-panel">
+      <button onClick={handleClearTable} className="remove-button">Очистить</button>
+    </div>
     <div className="product-table">
       <div></div>
       <div className="table-cell total-label">Сумма</div>
@@ -249,9 +253,13 @@ function MyFoodDiary() {
     changeProductAtIndex(product, rowIndex);
   };
 
+  const clearProductTable = () => {
+    setProductRows([]);
+  };
+
   return <>
     <SearchPanel onAddProductClick={addSuggestedProduct}/>
-    <TablePanel productRows={productRows} summary={summary} onRemoveRow={removeProductRow} onAmountChange={updateProductAmount}/>
+    <TablePanel productRows={productRows} summary={summary} onRemoveRow={removeProductRow} onAmountChange={updateProductAmount} onClearTable={clearProductTable}/>
   </>
 }
 

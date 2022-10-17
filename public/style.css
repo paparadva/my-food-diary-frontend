@@ -83,6 +83,14 @@ button {
     background-color: rgb(48, 56, 65);
 }
 
+.table-panel {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    padding: 5px;
+    height: 40px;
+}
+
 .product-table {
     display: grid;
     grid-template-columns: 4fr 1fr 1fr 1fr 1fr 1fr 40px;
