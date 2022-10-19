@@ -1,10 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
+import { debounce, throttle } from './utils';
+import { postProductRowsToBackend } from './backendApi';
+import TablePanel from './TablePanel';
+import SearchPanel from './SearchPanel';
 
-const SEARCH_PRODUCTS_URL = "http://localhost:8080/api/product/search?query=";
+
 const GET_PRODUCT_URL = "http://localhost:8080/api/product?name=";
-const HISTORY_URL = "http://localhost:8080/api/history/";
 
 const portionSizeGrams = 100.0;
 
@@ -48,166 +51,14 @@ class SummaryData {
   }
 }
 
-function throttleDecorator(func) {
-  const delayMs = 300;
 
-  let lastArgs;
-  let throttling = false;
-
-  return function() {
-    lastArgs = arguments;
-
-    if (!throttling) {
-      throttling = true;
-
-      setTimeout(() => {
-        throttling = false;
-        func.call(this, ...lastArgs);
-      }, delayMs);
-    }
-  };
-}
-
-const getProductSuggestions = throttleDecorator((query, setResultFunc) => {
-  fetch(SEARCH_PRODUCTS_URL + encodeURIComponent(query))
-    .then(response => response.json())
-    .then(names => setResultFunc(names));
-});
+const saveProductRowsToBackend = debounce(postProductRowsToBackend, 300);
 
 
-function SearchPanel(props) {
-  const [suggestions, setSuggestions] = useState([]);
-
-  const handleAddProductClick = props.onAddProductClick;
-
-  const handleSearchInput = event => {
-    let query = event.target.value;
-    if (!query.trim()) { setSuggestions([]); return; }
-
-    getProductSuggestions(query, (names) => setSuggestions(names));
-  };
-
-  return (
-  <div className="search-container">
-    <input type="search" id="search-input" onChange={handleSearchInput}/>
-    
-    <div className="search-results">
-
-    {suggestions.map(productName => 
-      <div className="table-row" key={productName}>
-        <div className="table-cell product-name">{productName}</div>
-        <div className="table-cell">
-          <button onClick={() => handleAddProductClick(productName)} className="row-action-button add-button">+</button>
-        </div>
-      </div>
-    )}
-
-    </div>
-  </div>
-  );
-}
-
-
-function TablePanel(props) {
-  const productRows = props.productRows;
-  const handleRemoveRow = props.onRemoveRow;
-  const handleAmountChange = props.onAmountChange;
-  const handleClearTable = props.onClearTable;
-  const handleSave = props.onSave;
-  const summary = props.summary;
-
-  return (
-  <div className="table-container">
-    <div className="table-panel">
-      <button onClick={handleSave} className="save-button">Сохранить</button>
-      <button onClick={handleClearTable} className="remove-button">Очистить</button>
-    </div>
-    <div className="product-table">
-      <div></div>
-      <div className="table-cell total-label">Сумма</div>
-      <div className="table-cell total-kcal">{Math.round(summary.kcal)}</div>
-      <div className="table-cell total-protein">{summary.protein.toFixed(1)}</div>
-      <div className="table-cell total-fat">{summary.fat.toFixed(1)}</div>
-      <div className="table-cell total-carb">{summary.carb.toFixed(1)}</div>
-      <div></div>
-
-      <div className="table-cell header-name">Продукт</div>
-      <div className="table-cell header-mass">Масса, г</div>
-      <div className="table-cell header-kcal">ккал</div>
-      <div className="table-cell header-protein">б</div>
-      <div className="table-cell header-fat">ж</div>
-      <div className="table-cell header-carb">у</div>
-      <div></div>
-
-      {productRows.map((product, index) => <TableRow 
-        key={product.id} 
-        product={product} 
-        onAmountChange={handleAmountChange} 
-        onRemoveClick={handleRemoveRow} 
-        rowIndex={index} />
-      )}
-      
-    </div>
-  </div>
-  );
-}
-
-
-function TableRow(props) {
-  const product = props.product;
-  const onAmountChange = props.onAmountChange;
-  const onRemoveClick = props.onRemoveClick;
-  const rowIndex = props.rowIndex;
-
-  return (
-    <div className="table-row">
-      <div className="table-cell product-name">{product.name}</div>
-      <div className="table-cell product-mass">
-        <input type="number" defaultValue={product.amount} onChange={(e) => onAmountChange(rowIndex, e.target.value)} onFocus={(e) => e.target.select()} min="0" className="mass-input"/>
-      </div>
-      <div className="table-cell product-kcal">{Math.round(product.calcKcal())}</div>
-      <div className="table-cell product-protein">{product.calcProtein().toFixed(1)}</div>
-      <div className="table-cell product-fat">{product.calcFat().toFixed(1)}</div>
-      <div className="table-cell product-carb">{product.calcCarb().toFixed(1)}</div>
-      <div className="table-cell product-remove">
-        <button className="row-action-button remove-button" onClick={() => onRemoveClick(rowIndex)}>X</button>
-      </div>
-    </div>
-  );
-}
-
-
-function debounceDecorator(func) {
-  const debounceTimeMs = 300;
-  let lastArgs;
-  let timer;
-
-  return function() {
-    lastArgs = arguments;
-
-    clearTimeout(timer);
-
-    timer = setTimeout(() => {
-      func.call(this, ...lastArgs);
-    }, debounceTimeMs);
-  }
-}
-
-const saveProductRowsToServer = debounceDecorator(productRows => {
-  const today = new Date();
-  const todayString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-  const request = productRows.map(row => {return {productName: row.name, grams: row.amount}});
-
-  fetch(HISTORY_URL + todayString, {
-    method: "POST",
-    body: JSON.stringify(request),
-    headers: {"Content-Type": "application/json;charset=utf-8"}
-  });
-});
-
-const saveProductRowsToLocalStorage = debounceDecorator(productRows => {
+const saveProductRowsToLocalStorage = debounce(productRows => {
   localStorage.setItem("productRows", JSON.stringify(productRows));
-});
+}, 300);
+
 
 function readProductRowsFromLocalStorage() {
   const productRowsJson = localStorage.getItem("productRows");
@@ -288,7 +139,7 @@ function MyFoodDiary() {
   };
 
   const saveProductTable = () => {
-    saveProductRowsToServer(productRows);
+    saveProductRowsToBackend(productRows);
   }
 
   return <>
