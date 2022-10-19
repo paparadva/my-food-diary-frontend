@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 
 const SEARCH_PRODUCTS_URL = "http://localhost:8080/api/product/search?query=";
 const GET_PRODUCT_URL = "http://localhost:8080/api/product?name=";
+const HISTORY_URL = "http://localhost:8080/api/history/";
 
 const portionSizeGrams = 100.0;
 
@@ -112,11 +113,13 @@ function TablePanel(props) {
   const handleRemoveRow = props.onRemoveRow;
   const handleAmountChange = props.onAmountChange;
   const handleClearTable = props.onClearTable;
+  const handleSave = props.onSave;
   const summary = props.summary;
 
   return (
   <div className="table-container">
     <div className="table-panel">
+      <button onClick={handleSave} className="save-button">Сохранить</button>
       <button onClick={handleClearTable} className="remove-button">Очистить</button>
     </div>
     <div className="product-table">
@@ -174,6 +177,38 @@ function TableRow(props) {
 }
 
 
+function debounceDecorator(func) {
+  const debounceTimeMs = 300;
+  let lastArgs;
+  let timer;
+
+  return function() {
+    lastArgs = arguments;
+
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      func.call(this, ...lastArgs);
+    }, debounceTimeMs);
+  }
+}
+
+const saveProductRowsToServer = debounceDecorator(productRows => {
+  const today = new Date();
+  const todayString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  const request = productRows.map(row => {return {productName: row.name, grams: row.amount}});
+
+  fetch(HISTORY_URL + todayString, {
+    method: "POST",
+    body: JSON.stringify(request),
+    headers: {"Content-Type": "application/json;charset=utf-8"}
+  });
+});
+
+const saveProductRowsToLocalStorage = debounceDecorator(productRows => {
+  localStorage.setItem("productRows", JSON.stringify(productRows));
+});
+
 function readProductRowsFromLocalStorage() {
   const productRowsJson = localStorage.getItem("productRows");
   if (!productRowsJson) {
@@ -188,18 +223,13 @@ function readProductRowsFromLocalStorage() {
   }
 }
 
-
-function saveProductRowsToLocalStorage(productRows) {
-  localStorage.setItem("productRows", JSON.stringify(productRows));
-}
-
-
 function MyFoodDiary() {
   const [productRows, setProductRows] = useState([]);
   const [summary, setSummary] = useState(new SummaryData());
 
   useEffect(() => {
     setProductRows(readProductRowsFromLocalStorage());
+    // load product rows from backend
   }, []);
 
   useEffect(() => {
@@ -257,9 +287,19 @@ function MyFoodDiary() {
     setProductRows([]);
   };
 
+  const saveProductTable = () => {
+    saveProductRowsToServer(productRows);
+  }
+
   return <>
     <SearchPanel onAddProductClick={addSuggestedProduct}/>
-    <TablePanel productRows={productRows} summary={summary} onRemoveRow={removeProductRow} onAmountChange={updateProductAmount} onClearTable={clearProductTable}/>
+    <TablePanel 
+      productRows={productRows} 
+      summary={summary} 
+      onRemoveRow={removeProductRow} 
+      onAmountChange={updateProductAmount} 
+      onClearTable={clearProductTable}
+      onSave={saveProductTable}/>
   </>
 }
 
