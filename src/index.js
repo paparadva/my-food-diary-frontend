@@ -2,55 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { debounce, throttle } from './utils';
-import { postProductRowsToBackend } from './backendApi';
+import { postProductRowsToBackend, getProductFromBackend } from './backendApi';
 import TablePanel from './TablePanel';
 import SearchPanel from './SearchPanel';
+import { ProductData, SummaryData } from './model';
 
 
-const GET_PRODUCT_URL = "http://localhost:8080/api/product?name=";
-
-const portionSizeGrams = 100.0;
-
-
-class ProductData {
-  constructor(name, amount, kcal, protein, fat, carb) {
-    this.name = name;
-    this.amount = amount ?? 0;
-    this.kcal = kcal ?? 0;
-    this.protein = protein ?? 0;
-    this.fat = fat ?? 0;
-    this.carb = carb ?? 0;
-  }
-
-  calcKcal() {
-    return this.kcal * (this.amount / portionSizeGrams);
-  }
-
-  calcProtein() {
-    return this.protein * (this.amount / portionSizeGrams);
-  }
-
-  calcFat() {
-    return this.fat * (this.amount / portionSizeGrams);
-  }
-
-  calcCarb() {
-    return this.carb * (this.amount / portionSizeGrams);
-  }
-}
-
-ProductData.nextId = 1;
-
-
-class SummaryData {
-  constructor(kcal, protein, fat, carb) {
-    this.kcal = kcal ?? 0;
-    this.protein = protein ?? 0;
-    this.fat = fat ?? 0;
-    this.carb = carb ?? 0;
-  }
-}
-
+let nextRowId = 1;
 
 const saveProductRowsToBackend = debounce(postProductRowsToBackend, 300);
 
@@ -68,11 +26,12 @@ function readProductRowsFromLocalStorage() {
     const objList = JSON.parse(productRowsJson);
     return objList.map(obj => {
       let product = Object.assign(new ProductData(), obj);
-      product.id = ProductData.nextId++;
+      product.id = nextRowId++;
       return product;
     });
   }
 }
+
 
 function MyFoodDiary() {
   const [productRows, setProductRows] = useState([]);
@@ -108,16 +67,14 @@ function MyFoodDiary() {
     const rows = productRows.slice();
 
     let product = new ProductData(productName);
-    product.id = ProductData.nextId++;
+    product.id = nextRowId++;
     const productId = product.id;
     rows.push(product);
 
-    fetch(GET_PRODUCT_URL + encodeURIComponent(productName))
-      .then(response => {return response.json()})
-      .then(productResp => {
-        const row = new ProductData(productResp.name, 0, productResp.kcal, productResp.protein, productResp.fat, productResp.carb);
-        row.id = productId;
-        changeProductAtIndex(row, rowIndex);
+    getProductFromBackend(productName)
+      .then(product => {
+        product.id = productId;
+        changeProductAtIndex(product, rowIndex);
       });
   };
 
