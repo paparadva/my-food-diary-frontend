@@ -3,12 +3,11 @@ import { ProductData } from './model.js';
 
 const HISTORY_URL = "http://localhost:8080/api/history/";
 
-function postProductRowsToBackend(productRows) {
-  const today = new Date();
-  const todayString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+function postProductRowsToBackend(date, productRows) {
+  const dateString = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   const request = productRows.map(row => {return {productName: row.name, grams: row.amount}});
 
-  return fetch(HISTORY_URL + todayString, {
+  return fetch(HISTORY_URL + dateString, {
     method: "POST",
     body: JSON.stringify(request),
     headers: {"Content-Type": "application/json;charset=utf-8"}

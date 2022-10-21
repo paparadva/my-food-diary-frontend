@@ -93,7 +93,7 @@ function MyFoodDiary() {
     };
 
     const saveProductTable = () => {
-        saveProductRowsToBackend(productRows);
+        saveProductRowsToBackend(new Date(), productRows);
     }
 
     return <>
