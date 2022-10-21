@@ -1,5 +1,5 @@
 import {debounce} from "./utils";
-import {getProductFromBackend, postProductRowsToBackend} from "./backendApi";
+import {getProductFromBackend, getProductRowsFromBackend, postProductRowsToBackend} from "./backendApi";
 import {ProductData, SummaryData} from "./model";
 import React, {useEffect, useState} from "react";
 import SearchPanel from "./SearchPanel";
@@ -35,8 +35,11 @@ function MyFoodDiary() {
     const [summary, setSummary] = useState(new SummaryData());
 
     useEffect(() => {
-        setProductRows(readProductRowsFromLocalStorage());
-        // load product rows from backend
+        getProductRowsFromBackend(new Date())
+            .then(productRows => {
+                productRows.forEach(product => product.id = nextRowId++);
+                setProductRows(productRows);
+            })
     }, []);
 
     useEffect(() => {
@@ -90,6 +93,7 @@ function MyFoodDiary() {
 
     const clearProductTable = () => {
         setProductRows([]);
+        saveProductRowsToBackend(new Date(), []);
     };
 
     const saveProductTable = () => {
